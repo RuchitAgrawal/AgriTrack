@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Header from './Header';
-import { authenticateUser, setCurrentUser, validateAadhar } from '../utils/localStorage';
+import { validateAadhar } from '../utils/localStorage';
+import apiClient from '../utils/apiClient';
 
 const SignIn = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     aadhar: '',
-    password: '',
-    role: 'farmer'
+    password: ''
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -42,10 +42,6 @@ const SignIn = () => {
       newErrors.password = 'Password is required';
     }
 
-    if (!formData.role) {
-      newErrors.role = 'Please select a role';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -59,29 +55,53 @@ const SignIn = () => {
 
     setIsLoading(true);
 
-    // Mock authentication delay
-    setTimeout(() => {
-      console.log('Attempting authentication with:', { aadhar: formData.aadhar, role: formData.role });
-      const user = authenticateUser(formData.aadhar, formData.password, formData.role);
-      console.log('Authentication result:', user);
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          aadhar: formData.aadhar,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
       
-      if (user) {
-        // Set user in localStorage first, then navigate
-        setCurrentUser(user);
-        console.log('User set in localStorage, navigating to:', `/${user.role}/dashboard`);
-        // Small delay to ensure localStorage is updated before navigation
-        setTimeout(() => {
-          navigate(`/${user.role}/dashboard`);
-          setIsLoading(false);
-        }, 100);
+      console.log('Full response data:', data);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (response.ok && data.success) {
+        console.log('User data received:', data.user);
+        console.log('User role:', data.user.role);
+        
+        // Store user data in both keys for compatibility
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
+        localStorage.setItem('agritrack_current', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+        
+        const dashboardPath = `/${data.user.role}/dashboard`;
+        console.log('Attempting to navigate to:', dashboardPath);
+        
+        // Force navigation with replace to avoid back button issues
+        navigate(dashboardPath, { replace: true });
       } else {
-        console.log('Authentication failed');
+        console.log('Login failed:', data);
         setErrors({
-          general: 'Invalid credentials. Please check your Aadhar number, password, and role.'
+          general: data.message || 'Invalid credentials. User not found in database.'
         });
-        setIsLoading(false);
       }
-    }, 1000);
+
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrors({
+        general: error.message || 'Failed to connect to server. Please check your connection.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -151,28 +171,6 @@ const SignIn = () => {
               )}
             </div>
 
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
-                  errors.role ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              >
-                <option value="farmer">Farmer</option>
-                <option value="distributor">Distributor</option>
-                <option value="retailer">Retailer</option>
-              </select>
-              {errors.role && (
-                <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.role}</p>
-              )}
-            </div>
-
             <motion.button
               type="submit"
               disabled={isLoading}
@@ -190,7 +188,7 @@ const SignIn = () => {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Demo credentials: Any 12-digit Aadhar, password: "password"
+              Use the Aadhar number and password from user creation
             </p>
           </div>
         </motion.div>

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Header from './Header';
-import { addUser, validateAadhar, validatePassword } from '../utils/localStorage';
+import { validateAadhar, validatePassword } from '../utils/localStorage';
+import apiClient from '../utils/apiClient';
 
 const AdminCreate = () => {
   const navigate = useNavigate();
@@ -72,19 +73,36 @@ const AdminCreate = () => {
 
     setIsLoading(true);
 
-    // Mock creation delay
-    setTimeout(() => {
-      try {
-        // TODO: Replace with blockchain user creation
-        const newUser = addUser({
+    try {
+      console.log('Attempting to create user with data:', {
+        username: formData.username,
+        type: formData.type,
+        address: formData.address,
+        aadhar: formData.aadhar,
+        walletId: formData.walletId || `wallet_${formData.type}_${Date.now()}`
+      });
+
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           username: formData.username,
-          role: formData.type,
+          type: formData.type,
           address: formData.address,
           aadhar: formData.aadhar,
           walletId: formData.walletId || `wallet_${formData.type}_${Date.now()}`,
           password: formData.password
-        });
+        })
+      });
 
+      const data = await response.json();
+
+      console.log('Registration response:', data);
+
+      if (data.success) {
+        console.log('User created successfully in database:', data.user);
         setSuccess(true);
         setFormData({
           username: '',
@@ -95,20 +113,18 @@ const AdminCreate = () => {
           password: '',
           confirmPassword: ''
         });
-
-        // Redirect after success
         setTimeout(() => {
           navigate('/asdfghfdkjbwefihwedfvoijhnemdfvoi/admin');
         }, 2000);
-
-      } catch (error) {
-        setErrors({
-          general: 'Failed to create user. Please try again.'
-        });
+      } else {
+        setErrors({ general: data.message || 'Failed to create user' });
       }
-      
+    } catch (error) {
+      console.error('Registration error:', error);
+      setErrors({ general: error.message || 'Failed to create user. Please check your connection and try again.' });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   if (success) {

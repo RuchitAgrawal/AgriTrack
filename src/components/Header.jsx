@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getCurrentUser, clearCurrentUser } from '../utils/localStorage';
 import { useDarkMode } from '../contexts/DarkModeContext';
@@ -6,10 +6,21 @@ import { useState } from 'react';
 
 const Header = ({ showAuth = true }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const currentUser = getCurrentUser();
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+
+  // Determine the appropriate link for the logo
+  const getLogoLink = () => {
+    // If on a dashboard page, stay on the current dashboard
+    if (location.pathname.includes('/dashboard')) {
+      return location.pathname;
+    }
+    // Otherwise, go to home
+    return '/';
+  };
 
   const handleLogout = () => {
     clearCurrentUser();
@@ -36,7 +47,7 @@ const Header = ({ showAuth = true }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to={getLogoLink()} className="flex items-center">
             <motion.div
               whileHover={{ scale: 1.05 }}
               className="text-2xl font-bold text-primary-600 dark:text-primary-400"
@@ -81,14 +92,24 @@ const Header = ({ showAuth = true }) => {
             {showAuth && currentUser && (
               <div className="flex items-center space-x-3">
                 {!isWalletConnected ? (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleConnectWallet}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Connect Wallet
-                  </motion.button>
+                  <>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleConnectWallet}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Connect Wallet
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleLogout}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Logout
+                    </motion.button>
+                  </>
                 ) : (
                   <div className="relative">
                     <motion.button

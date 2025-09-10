@@ -31,8 +31,7 @@ function App() {
           
           {/* Admin routes with secret path */}
           <Route path="/asdfghfdkjbwefihwedfvoijhnemdfvoi/admin" element={<Admin />} />
-
-          hi i ma blazde
+          
           <Route path="/asdfghfdkjbwefihwedfvoijhnemdfvoi/admin/create" element={<AdminCreate />} />
         </Routes>
       </Router>

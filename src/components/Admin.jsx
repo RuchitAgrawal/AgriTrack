@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Header from './Header';
 import { getUsers, getForms } from '../utils/localStorage';
+import apiClient from '../utils/apiClient';
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
@@ -13,17 +14,45 @@ const Admin = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setUsers(getUsers());
-    setForms(getForms());
+  const loadData = async () => {
+    try {
+      // Load users from database
+      const usersResponse = await apiClient.request('/auth/users');
+      if (usersResponse.success) {
+        setUsers(usersResponse.users);
+      } else {
+        // Fallback to localStorage if API fails
+        setUsers(getUsers());
+      }
+    } catch (error) {
+      console.error('Error loading users from API:', error);
+      // Fallback to localStorage
+      setUsers(getUsers());
+    }
+
+    try {
+      // Load transactions from database
+      const transactionsResponse = await apiClient.getTransactions();
+      if (transactionsResponse.success) {
+        setForms(transactionsResponse.transactions);
+      } else {
+        // Fallback to localStorage if API fails
+        setForms(getForms());
+      }
+    } catch (error) {
+      console.error('Error loading transactions from API:', error);
+      // Fallback to localStorage
+      setForms(getForms());
+    }
   };
 
   const groupFormsByRole = (forms) => {
     return forms.reduce((acc, form) => {
-      if (!acc[form.role]) {
-        acc[form.role] = [];
+      const role = form.creatorRole || form.role;
+      if (!acc[role]) {
+        acc[role] = [];
       }
-      acc[form.role].push(form);
+      acc[role].push(form);
       return acc;
     }, {});
   };
@@ -125,11 +154,22 @@ const Admin = () => {
                                 {new Date(form.createdAt).toLocaleDateString()}
                               </span>
                             </div>
-                            <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-2">
-                              {form.content}
-                            </p>
+                            <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-2">
+                              {form.cropDetails ? (
+                                <>
+                                  <p><strong>Crop:</strong> {form.cropDetails.cropName}</p>
+                                  <p><strong>Quantity:</strong> {form.cropDetails.quantity}</p>
+                                  <p><strong>Quality:</strong> {form.cropDetails.quality}</p>
+                                  <p><strong>Price:</strong> ₹{form.cropDetails.price}</p>
+                                  <p><strong>Target:</strong> {form.targetEntity?.entityId}</p>
+                                  <p><strong>Status:</strong> <span className={`capitalize ${form.status === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}`}>{form.status}</span></p>
+                                </>
+                              ) : (
+                                <p>{form.content}</p>
+                              )}
+                            </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              ID: {form.id} | User: {form.userId}
+                              ID: {form.transactionId || form.id} | User: {form.createdBy || form.userId}
                             </div>
                           </motion.div>
                         ))}
