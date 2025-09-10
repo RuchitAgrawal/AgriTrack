@@ -36,7 +36,7 @@ const Header = ({ showAuth = true }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link className="flex items-center">
             <motion.div
               whileHover={{ scale: 1.05 }}
               className="text-2xl font-bold text-primary-600 dark:text-primary-400"
