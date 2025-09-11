@@ -3,7 +3,7 @@ import { useState } from "react";
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
-    { text: "Hello! I'm your AgriTrack assistant. How can I help you with your agricultural supply chain today?", isUser: false },
+    { text: "Hello! I'm your AgriTalk assistant. How can I help you with your agricultural supply chain today?", isUser: false },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,7 +57,7 @@ export default function Chatbot() {
     <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white w-full h-full rounded-lg flex flex-col shadow-xl border border-gray-200 dark:border-gray-700">
   {/* Header */}
   <div className="bg-primary-600 dark:bg-primary-500 p-2 rounded-t-lg text-center font-bold">
-    AgriTrack Assistant
+    AgriTalk Assistant
   </div>
 
   {/* Messages */}

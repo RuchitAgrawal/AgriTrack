@@ -24,13 +24,41 @@ const Header = ({ showAuth = true }) => {
 
   const handleLogout = () => {
     clearCurrentUser();
+      if (window.ethereum) {
+      // You can clear the account or network data here
+        window.localStorage.removeItem('connectedAccount'); // or any other stored session info
+        setIsWalletConnected(false);
+      // Optional: If you want to reset the wallet address in your app's UI:
+        setAccount(null);
+      }
     setShowUserMenu(false);
     navigate('/');
   };
 
-  const handleConnectWallet = () => {
-    // Mock wallet connection
-    setIsWalletConnected(true);
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      try {
+        // await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setIsWalletConnected(true);
+        // Wallet is now connected, you can get the account with:
+        // const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+
+        const accounts = await window.ethereum.request({
+            method: 'eth_requestAccounts',
+        });
+
+        // Save the account address in your app's state
+        const account = accounts[0];
+
+        // Optional: Store account information in localStorage or app state
+        localStorage.setItem('connectedAccount', account);
+      } catch (error) {
+        // Handle error (user rejected, etc.)
+        console.error(error);
+      }
+    } else {
+      alert('MetaMask is not installed. Please install it to use this feature.');
+    }
   };
 
   const toggleUserMenu = () => {
@@ -96,7 +124,7 @@ const Header = ({ showAuth = true }) => {
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={handleConnectWallet}
+                      onClick={connectWallet}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                       Connect Wallet
